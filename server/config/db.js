@@ -1,19 +1,24 @@
 import Sequelize from 'sequelize';
+import 'dotenv/config';
 
-//const sequelize = new Sequelize('mysql://root:food@localhost:3306/MySQLfood1');
+const databaseUrl = process.env.DATABASE_URL;
 
-const sequelize = new Sequelize('mysql://admin:12345678@database-1.cjiq68c06wrl.us-east-1.rds.amazonaws.com:3306/MyFinancialApp');
+if (!databaseUrl) {
+  throw new Error(
+    'DATABASE_URL is not configured. Copy .env.example to .env and provide a valid MySQL connection string.'
+  );
+}
 
-//const sequelize = new Sequelize('mysql://admin:12345678@database-1.cjiq68c06wrl.us-east-1.rds.amazonaws.com:3306/MySQLfood1');
-
-//const sequelize = new Sequelize('mysql://root:root@localhost:8889/login');
+const sequelize = new Sequelize(databaseUrl, {
+  logging: false,
+});
 
 export const connectDB = async () => {
   try {
     await sequelize.authenticate();
-    console.log('access success');
+    console.log('Database connection established successfully.');
   } catch (error) {
-    console.error('access failed:', error.message);
+    console.error('Unable to connect to the database:', error.message);
     throw error;
   }
 };
