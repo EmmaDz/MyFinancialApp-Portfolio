@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import './Result.css'; 
 
@@ -7,7 +7,6 @@ const Result = () => {
     const navigate = useNavigate();
     const [totalScore, setTotalScore] = useState(null);
     const [riskRating, setRiskRating] = useState('');
-    const token = localStorage.getItem('token');
 
     useEffect(() => {
         const params = new URLSearchParams(location.search);

@@ -1,11 +1,9 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import {jwtDecode} from 'jwt-decode';
 
 const Home = () => {
-    const [isAuthenticated, setIsAuthenticated] = useState(false);
-    const [hasToken, setHasToken] = useState(false);
     const navigate = useNavigate();
     const [userId, setUserId] = useState(null);
 
@@ -23,21 +21,16 @@ const Home = () => {
             if (token) {
                 const decoded = jwtDecode(token);
                 setUserId(decoded.id);
-                setIsAuthenticated(true);
-                setHasToken(true);
             } else {
-                setHasToken(false);
                 navigate('/login');
             }
         };
 
         checkAuth();
-    }, []);
+    }, [navigate]);
 
     const handleLogout = () => {
         localStorage.removeItem('token');
-        setIsAuthenticated(false);
-        setHasToken(false);
         setUserId(null);
         navigate('/login');
     };
@@ -130,9 +123,6 @@ const Home = () => {
                     Products
                 </button>
                 <button onClick={() => navigate("/financialProductSearch")} style={buttonStyle}>Search Financial
-                    Products
-                </button>
-                <button onClick={() => navigate("/financialProductImport")} style={buttonStyle}>Import Financial
                     Products
                 </button>
                 <button onClick={handleLogout} style={buttonStyle}>Logout</button>

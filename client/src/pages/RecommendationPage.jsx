@@ -1,13 +1,17 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import axios from 'axios';
 
 const RecommendationsPage = () => {
     const location = useLocation();
-    const { selectedProducts } = location.state;
+    const selectedProducts = location.state?.selectedProducts;
     const [recommendations, setRecommendations] = useState([]);
 
     useEffect(() => {
+        if (!selectedProducts?.length) {
+            return;
+        }
+
         const token = localStorage.getItem('token');
         const generateRecommendations = async () => {
             try {
@@ -24,7 +28,7 @@ const RecommendationsPage = () => {
         };
 
         generateRecommendations();
-    }, []);
+    }, [selectedProducts]);
 
     return (
         <div>

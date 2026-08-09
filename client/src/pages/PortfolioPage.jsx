@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { Pie } from "react-chartjs-2";
 import { Chart as ChartJS, Tooltip, Legend, ArcElement } from "chart.js/auto";
-import { ResponsiveContainer } from 'recharts';
+import PropTypes from 'prop-types';
 
 // Register Chart.js plugins
 ChartJS.register(Tooltip, Legend, ArcElement);
@@ -23,16 +23,18 @@ export const PieChartComponent = ({ data }) => {
                 }
             },
             tooltip: {
-                callbacks: {
-                    label: function(tooltipItem) {
-                        let sum = 0;
-                        let dataArr = tooltipItem.dataset.data;
-                        dataArr.map(data => {
-                            sum += Number(data);
-                        });
-                        let percentage = (tooltipItem.raw * 100 / sum).toFixed(2) + "%";
-                        return `${tooltipItem.label}: ${percentage}`;
-                    }
+                label: function (tooltipItem) {
+                    const dataArr = tooltipItem.dataset.data;
+
+                    const sum = dataArr.reduce(
+                        (total, value) => total + Number(value),
+                        0
+                    );
+
+                    const percentage =
+                        ((tooltipItem.raw * 100) / sum).toFixed(2) + "%";
+
+                    return `${tooltipItem.label}: ${percentage}`;
                 }
             }
         },
@@ -54,6 +56,15 @@ export const PieChartComponent = ({ data }) => {
     return <div style={{ height: '500px', width: '500px' }}>
         <Pie options={options} data={chartData} />
     </div>;
+};
+
+PieChartComponent.propTypes = {
+    data: PropTypes.arrayOf(
+        PropTypes.shape({
+            name: PropTypes.string.isRequired,
+            value: PropTypes.number.isRequired,
+        })
+    ).isRequired,
 };
 
 // Portfolio page component
@@ -116,9 +127,16 @@ const PortfolioPage = () => {
                 </ul>
             </p>
 
-            <ResponsiveContainer width="100%" aspect={2}>
+            <div
+                style={{
+                    width: '100%',
+                    display: 'flex',
+                    justifyContent: 'center'
+                }}
+            >
                 <PieChartComponent data={data} />
-            </ResponsiveContainer>
+            </div>
+
             <button onClick={handleNavigateToSelection} style={{
                 width: '200px',
                 padding: '10px',
