@@ -1,62 +1,165 @@
-import { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import './Result.css'; 
+import './Result.css';
 
 const Result = () => {
     const location = useLocation();
     const navigate = useNavigate();
-    const [totalScore, setTotalScore] = useState(null);
-    const [riskRating, setRiskRating] = useState('');
 
-    useEffect(() => {
-        const params = new URLSearchParams(location.search);
-        const score = params.get('totalScore');
-        const rating = params.get('riskRating');
-        setTotalScore(score);
-        setRiskRating(rating);
-    }, [location.search]);
-    
+    const assessment = location.state?.assessment;
+
+
     const handleGoToPortfolio = () => {
-        navigate(`/portfolio?riskRating=${riskRating}`);
+        if (!assessment?.riskLevel) {
+            return;
+        }
+
+        navigate(
+            `/portfolio?riskRating=${encodeURIComponent(
+                assessment.riskLevel
+            )}`
+        );
     };
 
-    const getRiskExplanation = () => {
-        switch (riskRating) {
+
+    const getRiskExplanation = (riskLevel) => {
+        switch (riskLevel) {
             case 'Very Conservative':
-                return 'You have a very low tolerance for risk and are unable to tolerate any investment losses. You prefer knowing that your capital is safe and are willing to accept lower returns to protect your capital. You may have also got this result if you have a very short investment time horizon or an investment objective of safety.';
+                return (
+                    'Your overall profile is Very Conservative. ' +
+                    'At least one part of your assessment indicates ' +
+                    'that taking substantial investment risk may not ' +
+                    'be appropriate for the circumstances represented ' +
+                    'in this questionnaire.'
+                );
+
             case 'Conservative':
-                return 'You have a low tolerance for risk and potential loss of capital. You are willing to accept some short-term fluctuations and small losses in your investment portfolio in exchange for modest returns. You may have also got this result if you have a shorter investment time horizon or an investment objective of income.';
+                return (
+                    'Your overall profile is Conservative. ' +
+                    'Your assessment suggests that preserving capital ' +
+                    'and limiting potential losses are important constraints.'
+                );
+
             case 'Balanced':
-                return 'You have a moderate tolerance for risk and loss of capital. You are willing to tolerate some fluctuations in your investment returns and moderate losses of capital. You have at least a medium-term investment time horizon.';
+                return (
+                    'Your overall profile is Balanced. ' +
+                    'Your assessment suggests a moderate ability and ' +
+                    'willingness to accept investment risk while still ' +
+                    'placing importance on stability.'
+                );
+
             case 'Growth':
-                return 'You have a high tolerance for risk and loss of capital. You are willing to tolerate large fluctuations in your investment returns and moderate to large losses of capital in exchange for potential long-term capital appreciation. You do not have any significant income requirements from your investments. You have at least a medium-term investment time horizon.';
+                return (
+                    'Your overall profile is Growth. ' +
+                    'Your assessment indicates a relatively strong ' +
+                    'ability and willingness to accept fluctuations ' +
+                    'in pursuit of longer-term growth.'
+                );
+
             case 'Aggressive Growth':
-                return 'Your tolerance for risk, portfolio volatility, and investment losses is very high. You are willing to tolerate potentially significant and sustained price fluctuations and large losses of capital. You have extensive investment knowledge. You have no income requirements from your investments and have a long investment time horizon.';
+                return (
+                    'Your overall profile is Aggressive Growth. ' +
+                    'All evaluated dimensions support a relatively high ' +
+                    'capacity and willingness to accept investment risk.'
+                );
+
             default:
-                return 'No explanation available for this risk rating.';
+                return 'No explanation is available for this risk profile.';
         }
     };
+
+
+    if (!assessment) {
+        return (
+            <div className="result-container">
+                <h1>Your Investment Risk Profile</h1>
+
+                <p>
+                    No assessment result is available.
+                    Please complete the questionnaire first.
+                </p>
+
+                <div className="button-container">
+                    <button
+                        onClick={() => navigate('/questionnaire')}
+                    >
+                        Go to Questionnaire
+                    </button>
+                </div>
+            </div>
+        );
+    }
+
 
     return (
         <div className="result-container">
             <h1>Your Investment Risk Profile</h1>
-            {totalScore && riskRating ? (
-                <div className="result">
-                    <p><strong>Total Score:</strong> {totalScore}</p>
-                    <p><strong>Risk Rating:</strong> {riskRating}</p>
-                    <p><strong>Explanation:</strong> {getRiskExplanation()}</p>
-                    <p><strong>Hint:</strong>The total score range is 4 to 128</p>
-                </div>
-            ) : (
-                <p>Loading your result...</p>
-            )}
-            
+
+            <div className="result">
+                <h2>{assessment.riskLevel}</h2>
+
+                <p>
+                    <strong>Explanation:</strong>{' '}
+                    {getRiskExplanation(
+                        assessment.riskLevel
+                    )}
+                </p>
+
+                <h3>Assessment Details</h3>
+
+                <p>
+                    <strong>Investment Time Horizon:</strong>{' '}
+                    {assessment.timeHorizonProfile}
+                </p>
+
+                <p>
+                    <strong>Investment Knowledge:</strong>{' '}
+                    {assessment.investmentKnowledgeProfile}
+                </p>
+
+                <p>
+                    <strong>Investment Objective:</strong>{' '}
+                    {assessment.investmentObjectiveProfile}
+                </p>
+
+                <p>
+                    <strong>Risk Capacity:</strong>{' '}
+                    {assessment.riskCapacityProfile}
+                    {' '}
+                    (Score: {assessment.riskCapacityScore})
+                </p>
+
+                <p>
+                    <strong>Risk Tolerance:</strong>{' '}
+                    {assessment.riskToleranceProfile}
+                    {' '}
+                    (Score: {assessment.riskToleranceScore})
+                </p>
+
+                <p className="hint">
+                    Your overall risk profile reflects the most
+                    restrictive dimension identified by this
+                    educational assessment.
+                </p>
+
+                <p className="hint">
+                    This tool is provided for educational and
+                    demonstration purposes only and does not
+                    constitute financial or investment advice.
+                </p>
+            </div>
+
             <div className="button-container">
-               
-                <button onClick={() => window.history.back()}>
+                <button
+                    onClick={() => window.history.back()}
+                >
                     Back
                 </button>
-                <button onClick={handleGoToPortfolio}>Next</button>
+
+                <button
+                    onClick={handleGoToPortfolio}
+                >
+                    Next
+                </button>
             </div>
         </div>
     );

@@ -1,182 +1,457 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './Questionaire.css';
 
+const STORAGE_KEY = 'riskQuestionnaireV2';
+
+const initialFormData = {
+    Q1: '',
+    Q2: '',
+    Q3: '',
+    Q4: '',
+    Q5: '',
+    Q6: '',
+    Q7: '',
+    Q8: '',
+    Q9: '',
+    Q10: '',
+    Q11: '',
+    Q12: '',
+    Q13: '',
+    Q14: '',
+    Q15: '',
+};
+
+const questions = [
+    {
+        id: 'Q1',
+        section: 'Investment Time Horizon',
+        text: 'When do you expect to withdraw a significant portion of the money in this portfolio?',
+        options: [
+            { value: 'A', label: 'Less than 1 year' },
+            { value: 'B', label: '1-3 years' },
+            { value: 'C', label: '4-6 years' },
+            { value: 'D', label: '7-9 years' },
+            { value: 'E', label: '10 years or more' },
+        ],
+    },
+
+    {
+        id: 'Q2',
+        section: 'Investment Knowledge',
+        text: 'Which statement best describes your knowledge of investments?',
+        options: [
+            {
+                value: 'A',
+                label: 'I have very little knowledge of investments.',
+            },
+            {
+                value: 'B',
+                label: 'I have a moderate level of investment knowledge.',
+            },
+            {
+                value: 'C',
+                label: 'I have extensive investment knowledge and follow financial markets closely.',
+            },
+        ],
+    },
+
+    {
+        id: 'Q3',
+        section: 'Investment Objective',
+        text: 'What is your primary goal for this portfolio?',
+        options: [
+            {
+                value: 'A',
+                label: 'Preserve my money and minimize the possibility of short-term losses.',
+            },
+            {
+                value: 'B',
+                label: 'Generate a relatively steady source of investment income.',
+            },
+            {
+                value: 'C',
+                label: 'Balance income generation with some long-term growth.',
+            },
+            {
+                value: 'D',
+                label: 'Focus primarily on long-term growth.',
+            },
+        ],
+    },
+
+    {
+        id: 'Q4',
+        section: 'Risk Capacity',
+        text: 'What is your annual income from all sources?',
+        options: [
+            { value: 'A', label: 'Less than $25,000' },
+            { value: 'B', label: '$25,000 - $49,999' },
+            { value: 'C', label: '$50,000 - $74,999' },
+            { value: 'D', label: '$75,000 - $99,999' },
+            { value: 'E', label: '$100,000 - $199,999' },
+            { value: 'F', label: '$200,000 or more' },
+        ],
+    },
+
+    {
+        id: 'Q5',
+        text: 'How would you describe the stability of your current and future income sources?',
+        options: [
+            { value: 'A', label: 'Stable' },
+            { value: 'B', label: 'Somewhat stable' },
+            { value: 'C', label: 'Unstable' },
+        ],
+    },
+
+    {
+        id: 'Q6',
+        text: 'How would you classify your overall financial situation?',
+        options: [
+            {
+                value: 'A',
+                label: 'No savings and significant debt',
+            },
+            {
+                value: 'B',
+                label: 'Little savings and a fair amount of debt',
+            },
+            {
+                value: 'C',
+                label: 'Some savings and some debt',
+            },
+            {
+                value: 'D',
+                label: 'Some savings and little or no debt',
+            },
+            {
+                value: 'E',
+                label: 'Significant savings and little or no debt',
+            },
+        ],
+    },
+
+    {
+        id: 'Q7',
+        text: 'What is your estimated net worth?',
+        options: [
+            { value: 'A', label: 'Less than $50,000' },
+            { value: 'B', label: '$50,000 - $99,999' },
+            { value: 'C', label: '$100,000 - $249,999' },
+            { value: 'D', label: '$250,000 - $499,999' },
+            { value: 'E', label: '$500,000 - $999,999' },
+            { value: 'F', label: '$1,000,000 or more' },
+        ],
+    },
+
+    {
+        id: 'Q8',
+        text: 'Approximately what percentage of your total savings and investments does this portfolio represent?',
+        options: [
+            { value: 'A', label: 'Less than 25%' },
+            { value: 'B', label: '25% - 50%' },
+            { value: 'C', label: '51% - 75%' },
+            { value: 'D', label: 'More than 75%' },
+        ],
+    },
+
+    {
+        id: 'Q9',
+        text: 'What is your age group?',
+        options: [
+            { value: 'A', label: 'Under 35' },
+            { value: 'B', label: '35-54' },
+            { value: 'C', label: '55-64' },
+            { value: 'D', label: '65 or older' },
+        ],
+    },
+
+    {
+        id: 'Q10',
+        section: 'Risk Tolerance',
+        text: 'When making financial and investment decisions, how would you describe yourself?',
+        options: [
+            {
+                value: 'A',
+                label: 'Very conservative and focused on avoiding losses',
+            },
+            {
+                value: 'B',
+                label: 'Conservative but willing to accept a small amount of risk',
+            },
+            {
+                value: 'C',
+                label: 'Comfortable accepting moderate risk for potentially higher returns',
+            },
+            {
+                value: 'D',
+                label: 'Comfortable accepting significant risk for potentially higher returns',
+            },
+        ],
+    },
+
+    {
+        id: 'Q11',
+        text: 'If you invested $10,000, how much of a decline could you tolerate over a 12-month period?',
+        options: [
+            { value: 'A', label: 'I could not tolerate any loss' },
+            { value: 'B', label: 'About $300 (3%)' },
+            { value: 'C', label: 'About $1,000 (10%)' },
+            { value: 'D', label: 'About $2,000 (20%)' },
+            { value: 'E', label: 'More than $2,000 (more than 20%)' },
+        ],
+    },
+
+    {
+        id: 'Q12',
+        text: 'When faced with a major financial decision, are you more concerned about possible losses or possible gains?',
+        options: [
+            { value: 'A', label: 'Always the possible losses' },
+            { value: 'B', label: 'Usually the possible losses' },
+            { value: 'C', label: 'Usually the possible gains' },
+            { value: 'D', label: 'Always the possible gains' },
+        ],
+    },
+
+    {
+        id: 'Q13',
+        text: 'Which hypothetical one-year gain/loss combination would you be most comfortable accepting on a $10,000 investment?',
+        options: [
+            {
+                value: 'A',
+                label: 'No loss / potential gain of $200',
+            },
+            {
+                value: 'B',
+                label: 'Potential loss of $200 / potential gain of $500',
+            },
+            {
+                value: 'C',
+                label: 'Potential loss of $800 / potential gain of $1,200',
+            },
+            {
+                value: 'D',
+                label: 'Potential loss of $2,000 / potential gain of $2,500',
+            },
+        ],
+    },
+
+    {
+        id: 'Q14',
+        text: 'If an investment you owned fell by more than 30% over a short period, what would you most likely do?',
+        options: [
+            {
+                value: 'A',
+                label: 'Sell the entire investment to avoid further losses',
+            },
+            {
+                value: 'B',
+                label: 'Sell part of the investment to reduce potential losses',
+            },
+            {
+                value: 'C',
+                label: 'Hold the investment and wait for a possible recovery',
+            },
+            {
+                value: 'D',
+                label: 'Buy more while prices are lower',
+            },
+        ],
+    },
+
+    {
+        id: 'Q15',
+        text: 'Which pattern of yearly investment returns would you be most comfortable holding over the long term?',
+        options: [
+            {
+                value: 'A',
+                label: 'Small, relatively stable gains with very little risk of loss',
+            },
+            {
+                value: 'B',
+                label: 'Moderate gains with occasional moderate losses',
+            },
+            {
+                value: 'C',
+                label: 'Larger potential gains with larger fluctuations and losses',
+            },
+            {
+                value: 'D',
+                label: 'High potential gains with very large fluctuations and possible losses',
+            },
+        ],
+    },
+];
+
+
 const Questionaire = () => {
-    const [formData, setFormData] = useState({
-        Q1: '',  Q2: '',  Q3: '',  Q4: '',
-        Q5: '',  Q6: '',  Q7: '',  Q8: '',
-        Q9: '', Q10: '', Q11: '', Q12: ''});
+    const [formData, setFormData] = useState(initialFormData);
 
-    const navigate = useNavigate(); 
+    const navigate = useNavigate();
 
-    useEffect(() => {// sychorize the data user chose when clicking back in the result page
-        const savedData = JSON.parse(localStorage.getItem('formData'));
-        if (savedData) {
-            setFormData(savedData);
+    useEffect(() => {
+        try {
+            const savedData = JSON.parse(
+                localStorage.getItem(STORAGE_KEY)
+            );
+
+            if (savedData) {
+                setFormData({
+                    ...initialFormData,
+                    ...savedData,
+                });
+            }
+        } catch (error) {
+            console.error(
+                'Unable to restore questionnaire answers:',
+                error
+            );
+
+            localStorage.removeItem(STORAGE_KEY);
         }
     }, []);
 
-    const handleChange = (e) => {
-        setFormData({...formData,[e.target.name]: e.target.value});
-        localStorage.setItem('formData', JSON.stringify({ ...formData, [e.target.name]: e.target.value }));
-    };
 
-    const handleSubmit = (e) => {
-        e.preventDefault();
-    
-        const data = { ...formData };
-        const token = localStorage.getItem('token');
-    
-        if (!token) {
-            console.error('No token found. User might not be logged in.');
-            return;
-        }
-    
-        fetch('http://localhost:4000/api/questionnaire/submit-quiz', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            },
-            body: JSON.stringify(data),
-        })
-        .then(res => {
-            if (!res.ok) {
-                throw new Error(`HTTP error! status: ${res.status}`);
-            }
-            return res.json();
-        })
-        .then(rep => {
-            console.log('Response:', rep);
-            navigate(`/result?totalScore=${rep.totalScore}&riskRating=${rep.riskRating}`);
-        })
-        .catch(error => {
-            console.error('Error:', error);
+    const handleChange = (event) => {
+        const { name, value } = event.target;
+
+        setFormData(previousData => {
+            const updatedData = {
+                ...previousData,
+                [name]: value,
+            };
+
+            localStorage.setItem(
+                STORAGE_KEY,
+                JSON.stringify(updatedData)
+            );
+
+            return updatedData;
         });
     };
 
+
+    const handleSubmit = async (event) => {
+        event.preventDefault();
+
+        const token = localStorage.getItem('token');
+
+        if (!token) {
+            console.error(
+                'No token found. User might not be logged in.'
+            );
+            return;
+        }
+
+        try {
+            const response = await fetch(
+                'http://localhost:4000/api/questionnaire/submit-quiz',
+                {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        Authorization: `Bearer ${token}`,
+                    },
+                    body: JSON.stringify(formData),
+                }
+            );
+
+            if (!response.ok) {
+                throw new Error(
+                    `HTTP error! status: ${response.status}`
+                );
+            }
+
+            const result = await response.json();
+
+            console.log('Response:', result);
+
+            navigate('/result', {
+                state: {
+                    assessment: result.assessment,
+                },
+            });
+        } catch (error) {
+            console.error(
+                'Error submitting questionnaire:',
+                error
+            );
+        }
+    };
+
+
     return (
         <div className="container">
-            <h1 className="p3">What kind of investor are you?</h1><br/>
+            <h1 className="p3">
+                What kind of investor are you?
+            </h1>
+
             <p className="text">
-                Before you invest, it is important to understand what kind of investor you are, which means knowing your willingness and ability to accept risk, your investment time horizon, and your objectives. Answering these questions will best help us understand your current situation.
-            </p><br />
-            <p2 className="hint">
-                Hint: All the questions are compulsory.
-            </p2>
-            <p2 className="hint"><br />
-            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Only the final risk tolerant level and total score will be stored in your profile. You do not have to worry about the data leak of your choices to each of the questions.
-            </p2>
+                This questionnaire explores your investment time
+                horizon, knowledge, objectives, financial ability to
+                withstand losses, and willingness to accept risk.
+            </p>
+
+            <p className="hint">
+                All questions are required.
+            </p>
+
+            <p className="hint">
+                This tool is provided for educational and
+                demonstration purposes only and does not constitute
+                financial or investment advice.
+            </p>
 
             <form id="quizForm" onSubmit={handleSubmit}>
-            <br />
-                <div className="questionGroup">
-                    <p className="p1">Question 1: Which statement best describes your knowledge of investments?</p>
-                    <label><input type="radio" name="Q1" value="A" required onChange={handleChange} /> A. I have very little knowledge of investments.(0 points)</label><br />
-                    <label><input type="radio" name="Q1" value="B" onChange={handleChange} /> B. I have a moderate level of knowledge.(5 points)</label><br />
-                    <label><input type="radio" name="Q1" value="C" onChange={handleChange} /> C. I have extensive knowledge and follow financial markets closely.(10 points)</label><br />
-                </div>
+                {questions.map((question, index) => (
+                    <div key={question.id}>
+                        {question.section && (
+                            <h2>{question.section}</h2>
+                        )}
 
-                <br />
-                <div className="questionGroup">
-                    <p className="p1">Question 2: What is your annual income (from all sources)?</p>
-                    <label><input type="radio" name="Q2" value="A" required onChange={handleChange} /> A. Less than $25,000 (0 points)</label><br/>
-                    <label><input type="radio" name="Q2" value="B" onChange={handleChange} /> B. $25,000 – $49,999 (2 points)</label><br />
-                    <label><input type="radio" name="Q2" value="C" onChange={handleChange} /> C. $50,000 – $74,999 (4 points)</label><br />
-                    <label><input type="radio" name="Q2" value="D" onChange={handleChange} /> D. $75,000 – $99,999 (5 points)</label><br />
-                    <label><input type="radio" name="Q2" value="E" onChange={handleChange} /> E. $100,000 – $199,999 (7 points)</label><br />
-                    <label><input type="radio" name="Q2" value="F" onChange={handleChange} /> F. $200,000 or more (10 points)</label><br />
-                </div>
-                <br />
-                <div className="questionGroup">
-                    <p className="p1">Question 3: Your current and future income sources are:</p>
-                    <label><input type="radio" name="Q3" value="A" required onChange={handleChange} /> A. Stable (8 points)</label><br />
-                    <label><input type="radio" name="Q3" value="B" onChange={handleChange} /> B. Somewhat stable (4 points)</label><br />
-                    <label><input type="radio" name="Q3" value="C" onChange={handleChange} /> C. Unstable (1 point)</label><br />
-                </div>
-                <br />
-                <div className="questionGroup">
-                    <p className="p1">Question 4: How would you classify your overall financial situation?</p>
-                    <label><input type="radio" name="Q4" value="A" required onChange={handleChange} /> A. No savings and significant debt (0 points)</label><br />
-                    <label><input type="radio" name="Q4" value="B" onChange={handleChange} /> B. Little savings and a fair amount of debt (2 points)</label><br />
-                    <label><input type="radio" name="Q4" value="C" onChange={handleChange} /> C. Some savings and some debt (5 points)</label><br />
-                    <label><input type="radio" name="Q4" value="D" onChange={handleChange} /> D. Some savings and little or no debt (7 points)</label><br />
-                    <label><input type="radio" name="Q4" value="E" onChange={handleChange} /> E. Significant savings and little or no debt (10 points)</label><br />
-                </div>
-                <br />
-                <div className="questionGroup">
-                    <p className="p1">Question 5: What is your estimated net worth?</p>
-                    <label><input type="radio" name="Q5" value="A" required onChange={handleChange} /> A. Less than $50,000 (0 points)</label><br />
-                    <label><input type="radio" name="Q5" value="B" onChange={handleChange} /> B. $50,000 – $99,999 (2 points)</label><br />
-                    <label><input type="radio" name="Q5" value="C" onChange={handleChange} /> C. $100,000 – $249,999 (4 points)</label><br />
-                    <label><input type="radio" name="Q5" value="D" onChange={handleChange} /> D. $250,000 – $499,999 (6 points)</label><br />
-                    <label><input type="radio" name="Q5" value="E" onChange={handleChange} /> E. $500,000 - $999,999 (8 points)</label><br />
-                    <label><input type="radio" name="Q5" value="F" onChange={handleChange} /> F. $1,000,000 or more (10 points)</label><br />
-                </div>
-                <br />
-                <div className="questionGroup">
-                    <p className="p1">Question 6: This investment account represents approximately what percentage of your total savings and investments?</p>
-                    <label><input type="radio" name="Q6" value="A" required onChange={handleChange} /> A. Less than 25% (10 points)</label><br />
-                    <label><input type="radio" name="Q6" value="B" onChange={handleChange} /> B. 25% - 50% (5 points)</label><br />
-                    <label><input type="radio" name="Q6" value="C" onChange={handleChange} /> C. 51% - 75% (4 points)</label><br />
-                    <label><input type="radio" name="Q6" value="D" onChange={handleChange} /> D. More than 75% (2 points)</label><br />
-                </div>
-                <br />
-                <div className="questionGroup">
-                    <p className="p1">Question 7: What is your age group?</p>
-                    <label><input type="radio" name="Q7" value="A" required onChange={handleChange} /> A. Under 35 (20 points)</label><br />
-                    <label><input type="radio" name="Q7" value="B" onChange={handleChange} /> B. 35-54 (8 points)</label><br />
-                    <label><input type="radio" name="Q7" value="C" onChange={handleChange} /> C. 55-64 (3 points)</label><br />
-                    <label><input type="radio" name="Q7" value="D" onChange={handleChange} /> D. 65 or older (1 point)</label><br />
-                </div>
-                <br />
-                <div className="questionGroup">
-                    <p className="p1">Question 8: In making financial and investment decisions you are:</p>
-                    <label><input type="radio" name="Q8" value="A" required onChange={handleChange} /> A. Very conservative and try to minimize risk and avoid the possibility of any loss (0 points)</label><br />
-                    <label><input type="radio" name="Q8" value="B" onChange={handleChange} /> B. Conservative but willing to accept a small amount of risk (4 points)</label><br />
-                    <label><input type="radio" name="Q8" value="C" onChange={handleChange} /> C. Willing to accept a moderate level of risk and tolerate losses to achieve potentially higher returns (6 points)</label><br />
-                    <label><input type="radio" name="Q8" value="D" onChange={handleChange} /> D. Aggressive and typically take on significant risk (10 points)</label><br />
-                </div>
-                <br />
-                <div className="questionGroup">
-                    <p className="p1">Question 9: The value of an investment portfolio will generally go up and down over time. Assuming that you have invested $10,000, how much of a decline in your investment portfolio could you tolerate in a 12-month period?</p>
-                    <label><input type="radio" name="Q9" value="A" required onChange={handleChange} /> A. I could not tolerate any loss (0 points)</label><br />
-                    <label><input type="radio" name="Q9" value="B" onChange={handleChange} /> B. -$300 (-3%) (3 points)</label><br />
-                    <label><input type="radio" name="Q9" value="C" onChange={handleChange} /> C. -$1,000 (-10%) (6 points)</label><br />
-                    <label><input type="radio" name="Q9" value="D" onChange={handleChange} /> D. -$2,000 (-20%) (8 points)</label><br />
-                    <label><input type="radio" name="Q9" value="E" onChange={handleChange} /> E. More than -$2,000 (10 points)</label><br />
-                </div>
-                <br />
-                <div className="questionGroup">
-                    <p className="p1">Question 10: When you are faced with a major financial decision, are you more concerned about the possible losses or the possible gains?</p>
-                    <label><input type="radio" name="Q10" value="A" required onChange={handleChange} /> A. Always the possible losses (0 points)</label><br />
-                    <label><input type="radio" name="Q10" value="B" onChange={handleChange} /> B. Usually the possible losses (3 points)</label><br />
-                    <label><input type="radio" name="Q10" value="C" onChange={handleChange} /> C. Usually the possible gains (6 points)</label><br />
-                    <label><input type="radio" name="Q10" value="D" onChange={handleChange} /> D. Always the possible gains (10 points)</label><br />
-                </div>
-                <br />
-                <div className="questionGroup">
-                    <p className="p1">Question 11: The chart below shows the greatest one-year loss and the highest one-year gain on four different investments of $10,000. Given the potential gain or loss in any one year, which investment would you likely invest your money in?</p>
-                    <label><input type="radio" name="Q11" value="A" required onChange={handleChange} /> A. EITHER a loss of $0 OR a gain of $200 (0 points)</label><br />
-                    <label><input type="radio" name="Q11" value="B" onChange={handleChange} /> B. EITHER a loss of $200 OR a gain of $500 (3 points)</label><br />
-                    <label><input type="radio" name="Q11" value="C" onChange={handleChange} /> C. EITHER a loss of $800 OR a gain of $1,200 (6 points)</label><br />
-                    <label><input type="radio" name="Q11" value="D" onChange={handleChange} /> D. EITHER a loss of $2,000 OR a gain of $2,500 (10 points)</label><br />
-                </div>
-                <br />
-                <div className="questionGroup">
-                    <p className="p1">Question 12: From September 2008 through November 2008, North American stock markets lost over 30%. If you currently owned an investment that lost over 30% in 3 months, you would:</p>
-                    <label><input type="radio" name="Q12" value="A" required onChange={handleChange} /> A. Sell all of the remaining investment to avoid further losses (0 points)</label><br />
-                    <label><input type="radio" name="Q12" value="B" onChange={handleChange} /> B. Sell a portion of the remaining investment to protect some of your capital (3 points)</label><br />
-                    <label><input type="radio" name="Q12" value="C" onChange={handleChange} /> C. Hold onto the investment and not sell any of the investment in the hopes of higher future returns (5 points)</label><br />
-                    <label><input type="radio" name="Q12" value="D" onChange={handleChange} /> D. Buy more of the investment now that prices are lower (10 points)</label><br />
-                </div>
-                <button type="submit" className="button">Submit</button>
+                        <div className="questionGroup">
+                            <p className="p1">
+                                Question {index + 1}:{' '}
+                                {question.text}
+                            </p>
+
+                            {question.options.map(option => (
+                                <label
+                                    key={`${question.id}-${option.value}`}
+                                >
+                                    <input
+                                        type="radio"
+                                        name={question.id}
+                                        value={option.value}
+                                        checked={
+                                            formData[question.id] ===
+                                            option.value
+                                        }
+                                        required
+                                        onChange={handleChange}
+                                    />
+
+                                    {' '}
+                                    {option.value}. {option.label}
+                                    <br />
+                                </label>
+                            ))}
+                        </div>
+                    </div>
+                ))}
+
+                <button
+                    type="submit"
+                    className="button"
+                >
+                    Submit
+                </button>
             </form>
-            <p id="result"></p>
 
-            <p2>The source of the questions are from Canadian Investment Regulatory Organization. </p2>
-            <p2>https://www.ciro.ca/</p2>
+            <p className="hint">
+                Risk-profile methodology is based on concepts
+                presented in CIRO investor education materials.
+            </p>
         </div>
     );
 };

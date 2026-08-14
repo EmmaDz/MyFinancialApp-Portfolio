@@ -1,103 +1,245 @@
-import RiskManage from "../models/RiskManageModel.js";
-import jwt from "jsonwebtoken";
+import jwt from 'jsonwebtoken';
+
+import RiskManage from '../models/RiskManageModel.js';
+import { calculateRiskProfile } from '../services/riskProfileService.js';
+
 
 const submitQuiz = async (req, res) => {
-  const answers = req.body;
-  let totalScore = 0;
+    const token = req.headers.authorization?.split(' ')[1];
 
-  const scoreMapping = {
-    Q1: { A: 0, B: 5, C: 10 },
-    Q2: { A: 0, B: 2, C: 4, D: 5, E: 7, F: 10 },
-    Q3: { A: 8, B: 4, C: 1 },
-    Q4: { A: 0, B: 2, C: 5, D: 7, E: 10 },
-    Q5: { A: 0, B: 2, C: 4, D: 6, E: 8, F: 10 },
-    Q6: { A: 10, B: 5, C: 4, D: 2 },
-    Q7: { A: 20, B: 8, C: 3, D: 1 },
-    Q8: { A: 0, B: 4, C: 6, D: 10 },
-    Q9: { A: 0, B: 3, C: 6, D: 8, E: 10 },
-    Q10: { A: 0, B: 3, C: 6, D: 10 },
-    Q11: { A: 0, B: 3, C: 6, D: 10 },
-    Q12: { A: 0, B: 3, C: 5, D: 10 },
-  };
-
-  Object.entries(answers).forEach(([question, answer]) => {
-    if (scoreMapping[question] && scoreMapping[question][answer]) {
-      totalScore += scoreMapping[question][answer];
+    if (!token) {
+        return res.status(401).json({
+            error: 'Authorization token required',
+        });
     }
-  });
 
-  let riskRating;
-  if (totalScore <= 30) {
-    riskRating = "Very Conservative";
-  } else if (totalScore <= 50) {
-    riskRating = "Conservative";
-  } else if (totalScore <= 70) {
-    riskRating = "Balanced";
-  } else if (totalScore <= 100) {
-    riskRating = "Growth";
-  } else {
-    riskRating = "Aggressive Growth";
-  }
+    try {
+        // -----------------------------------------
+        // 1. Authenticate the current user
+        // -----------------------------------------
 
-  const token = req.headers.authorization?.split(" ")[1];
-  if (!token) {
-    return res.status(401).json({ error: "Authorization token required" });
-  }
+        const decoded = jwt.verify(
+            token,
+            process.env.JWT_SECRET
+        );
 
-  try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const userId = decoded.id;
+        const userId = decoded.id;
 
-    await RiskManage.create({
-      userId,
-      riskLevel: riskRating,
-      totalScore,
-      assessmentDate: new Date(),
-    });
 
-    res.json({ totalScore, riskRating });
-  } catch (error) {
-    if (error.name === 'TokenExpiredError') {
-    console.error('Token has expired:', error);
-    return res.status(401).json({ error: 'Token has expired' });
-  } else if (error.name === 'JsonWebTokenError') {
-    console.error('Invalid token:', error);
-    return res.status(401).json({ error: 'Invalid token' });
-  } else {
-    console.error("Error saving risk assessment:", error);
-    res.status(500).json({ error: "Unable to save risk assessment." });
-  }
- }
+        // -----------------------------------------
+        // 2. Calculate the risk profile
+        // -----------------------------------------
+
+        const riskProfile = calculateRiskProfile(
+            req.body
+        );
+
+
+        // -----------------------------------------
+        // 3. Save the assessment
+        // -----------------------------------------
+
+        const assessment = await RiskManage.create({
+            userId,
+
+            riskLevel:
+                riskProfile.riskLevel,
+
+            timeHorizonProfile:
+                riskProfile.timeHorizonProfile,
+
+            investmentKnowledgeProfile:
+                riskProfile.investmentKnowledgeProfile,
+
+            investmentObjectiveProfile:
+                riskProfile.investmentObjectiveProfile,
+
+            riskCapacityScore:
+                riskProfile.riskCapacityScore,
+
+            riskCapacityProfile:
+                riskProfile.riskCapacityProfile,
+
+            riskToleranceScore:
+                riskProfile.riskToleranceScore,
+
+            riskToleranceProfile:
+                riskProfile.riskToleranceProfile,
+
+            assessmentDate: new Date(),
+        });
+
+
+        // -----------------------------------------
+        // 4. Return the calculated result
+        // -----------------------------------------
+
+        return res.status(201).json({
+            message:
+                'Risk assessment completed successfully',
+
+            assessment: {
+                id: assessment.id,
+
+                riskLevel:
+                    assessment.riskLevel,
+
+                timeHorizonProfile:
+                    assessment.timeHorizonProfile,
+
+                investmentKnowledgeProfile:
+                    assessment.investmentKnowledgeProfile,
+
+                investmentObjectiveProfile:
+                    assessment.investmentObjectiveProfile,
+
+                riskCapacityScore:
+                    assessment.riskCapacityScore,
+
+                riskCapacityProfile:
+                    assessment.riskCapacityProfile,
+
+                riskToleranceScore:
+                    assessment.riskToleranceScore,
+
+                riskToleranceProfile:
+                    assessment.riskToleranceProfile,
+
+                assessmentDate:
+                    assessment.assessmentDate,
+            },
+        });
+    } catch (error) {
+        if (
+            error.name === 'TokenExpiredError'
+        ) {
+            return res.status(401).json({
+                error: 'Token has expired',
+            });
+        }
+
+        if (
+            error.name === 'JsonWebTokenError'
+        ) {
+            return res.status(401).json({
+                error: 'Invalid token',
+            });
+        }
+
+        // Validation errors thrown by
+        // calculateRiskProfile()
+        if (
+            error.message.startsWith('Missing answer') ||
+            error.message.startsWith(
+                'Invalid or missing answer'
+            ) ||
+            error.message.startsWith(
+                'Invalid answer'
+            )
+        ) {
+            return res.status(400).json({
+                error: error.message,
+            });
+        }
+
+        console.error(
+            'Error processing risk assessment:',
+            error
+        );
+
+        return res.status(500).json({
+            error:
+                'Unable to process risk assessment.',
+        });
+    }
 };
+
 
 const getRiskLevel = async (req, res) => {
-  const token = req.headers.authorization?.split(" ")[1];
+    const token =
+        req.headers.authorization?.split(' ')[1];
 
-  if (!token) {
-    return res.status(401).json({ error: "Authorization token required" });
-  }
-
-  try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const userId = decoded.id;
-
-    const riskInfo = await RiskManage.findOne({
-      where: { userId },
-      attributes: ["riskLevel", "totalScore", "assessmentDate"],
-      order: [["assessmentDate", "DESC"]],
-    });
-
-    if (riskInfo) {
-      res.json(riskInfo);
-    } else {
-      res
-        .status(404)
-        .json({ error: "No risk assessment found for this user." });
+    if (!token) {
+        return res.status(401).json({
+            error: 'Authorization token required',
+        });
     }
-  } catch (error) {
-    console.error("Error fetching risk info:", error);
-    res.status(500).json({ error: "Unable to fetch risk information." });
-  }
+
+    try {
+        const decoded = jwt.verify(
+            token,
+            process.env.JWT_SECRET
+        );
+
+        const userId = decoded.id;
+
+        const riskInfo =
+            await RiskManage.findOne({
+                where: {
+                    userId,
+                },
+
+                attributes: [
+                    'riskLevel',
+
+                    'timeHorizonProfile',
+                    'investmentKnowledgeProfile',
+                    'investmentObjectiveProfile',
+
+                    'riskCapacityScore',
+                    'riskCapacityProfile',
+
+                    'riskToleranceScore',
+                    'riskToleranceProfile',
+
+                    'assessmentDate',
+                ],
+
+                order: [
+                    ['assessmentDate', 'DESC'],
+                ],
+            });
+
+
+        if (!riskInfo) {
+            return res.status(404).json({
+                error:
+                    'No risk assessment found for this user.',
+            });
+        }
+
+        return res.json(riskInfo);
+    } catch (error) {
+        if (
+            error.name === 'TokenExpiredError'
+        ) {
+            return res.status(401).json({
+                error: 'Token has expired',
+            });
+        }
+
+        if (
+            error.name === 'JsonWebTokenError'
+        ) {
+            return res.status(401).json({
+                error: 'Invalid token',
+            });
+        }
+
+        console.error(
+            'Error fetching risk information:',
+            error
+        );
+
+        return res.status(500).json({
+            error:
+                'Unable to fetch risk information.',
+        });
+    }
 };
 
-export { submitQuiz, getRiskLevel };
+
+export {
+    submitQuiz,
+    getRiskLevel,
+};
