@@ -87,13 +87,29 @@ const PortfolioPage = () => {
         })
         .then(response => {
             console.log('API response:', response.data);
-            const { Stock, Fund, riskLevel } = response.data.portfolio;
-            const CashAndEquivalent = response.data.portfolio["Cash&Equivalent"];
+
+            const {
+                equity,
+                fixedIncome,
+                cashEquivalent,
+                riskLevel,
+            } = response.data.portfolio;
+
             setData([
-                { name: 'Stock', value: Stock },
-                { name: 'Fund', value: Fund },
-                { name: 'Cash&Equivalent', value: CashAndEquivalent }
+                {
+                    name: 'Equity',
+                    value: equity,
+                },
+                {
+                    name: 'Fixed Income',
+                    value: fixedIncome,
+                },
+                {
+                    name: 'Cash Equivalent',
+                    value: cashEquivalent,
+                },
             ]);
+
             setRiskLevel(riskLevel);
         })
         .catch(error => {
@@ -117,24 +133,24 @@ const PortfolioPage = () => {
             </p>
 
             <p style={{ textAlign: 'center', fontSize: '16px', color: '#666', maxWidth: '600px', margin: 'auto', marginBottom: '20px' }}>
-                Your portfolio allocations are based on established investment strategies to suit your risk profile.
-                Learn more about asset allocation strategies and how they might affect your investment choices on these resources:
-                <ul>
-                    <li><a href="https://www.investopedia.com/terms/a/assetallocation.asp" target="_blank" rel="noopener noreferrer">Investopedia - Asset Allocation</a></li>
-                    <li><a href="https://www.investopedia.com/managing-wealth/achieve-optimal-asset-allocation/" target="_blank" rel="noopener noreferrer">Investopedia - Achieve Optimal Asset Allocation</a></li>
-                    <li><a href="https://www.merrilledge.com/article/asset-allocation-strategies-to-help-you-manage-risk-and-reach-your-goals" target="_blank" rel="noopener noreferrer">Merrill Edge - Asset Allocation Strategies</a></li>
-                    <li><a href="https://smartasset.com/investing/asset-allocation" target="_blank" rel="noopener noreferrer">SmartAsset - Comprehensive Guide to Asset Allocation</a></li>
-                </ul>
+                This educational demo uses predefined model portfolio allocations
+                based on the selected risk profile. The allocations are intended
+                to demonstrate portfolio construction logic and are not
+                personalized investment advice.
             </p>
 
             <div
                 style={{
                     width: '100%',
                     display: 'flex',
-                    justifyContent: 'center'
+                    justifyContent: 'center',
                 }}
             >
-                <PieChartComponent data={data} />
+                {data.length > 0 ? (
+                    <PieChartComponent data={data} />
+                ) : (
+                    <p>Loading portfolio allocation...</p>
+                )}
             </div>
 
             <button onClick={handleNavigateToSelection} style={{

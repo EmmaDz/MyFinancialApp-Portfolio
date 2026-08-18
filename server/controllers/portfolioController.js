@@ -1,137 +1,226 @@
-// controllers/portfolioController.js
 import jwt from 'jsonwebtoken';
 import Portfolio from '../models/portfolioModel.js';
+import {
+    getPortfolioAllocation,
+} from '../services/portfolioAllocationService.js';
 
-const portfolioAllocations = {
-    'Very Conservative': { Stock: [25, 30], Fund: [50, 55], 'Cash&Equivalent': [15, 20] },
-    Conservative: { Stock: [35, 40], Fund: [55, 60], 'Cash&Equivalent': [5, 10] },
-    Balanced: { Stock: [50, 55], Fund: [35, 40], 'Cash&Equivalent': [5, 10] },
-    Growth: { Stock: [60, 65], Fund: [25, 30], 'Cash&Equivalent': [5, 10] },
-    'Aggressive Growth': { Stock: [80, 100], Fund: [0, 10], 'Cash&Equivalent': [0, 10] }
-};
 
-function selectPortfolioAllocation(allocationRanges) {
-    let Stock = selectValueWithinRange(...allocationRanges.Stock);
-    let Fund = selectValueWithinRange(...allocationRanges.Fund);
-    let CashAndEquivalent = 100 - Stock - Fund; // Use a valid JavaScript identifier
+function getUserIdFromRequest(req) {
+    const authHeader = req.headers.authorization;
 
-    if (CashAndEquivalent < 0) {
-        let adjustment = Math.abs(CashAndEquivalent);
-        let adjustStock = Math.ceil(adjustment / 2);
-        let adjustFund = Math.floor(adjustment / 2);
-
-        Stock -= adjustStock > Stock ? Stock : adjustStock;
-        Fund -= adjustFund > Fund ? Fund : adjustFund;
-        CashAndEquivalent = 100 - Stock - Fund;
+    if (!authHeader) {
+        const error = new Error(
+            'Authorization token required'
+        );
+        error.statusCode = 401;
+        throw error;
     }
 
-    const cashRange = allocationRanges['Cash&Equivalent'];
-    if (CashAndEquivalent < cashRange[0]) {
-        let shortfall = cashRange[0] - CashAndEquivalent;
-        if (Stock > shortfall) {
-            Stock -= shortfall;
-        } else {
-            Fund -= shortfall - Stock;
-            Stock = 0;
-        }
-        CashAndEquivalent = 100 - Stock - Fund;
-    } else if (CashAndEquivalent > cashRange[1]) {
-        let excess = CashAndEquivalent - cashRange[1];
-        if (Stock + excess <= 100) {
-            Stock += excess;
-        } else {
-            Stock = 100 - Fund;
-        }
-        CashAndEquivalent = 100 - Stock - Fund;
+    const [scheme, token] =
+        authHeader.split(' ');
+
+    if (scheme !== 'Bearer' || !token) {
+        const error = new Error(
+            'Invalid authorization header'
+        );
+        error.statusCode = 401;
+        throw error;
     }
 
-    return { Stock, Fund, CashAndEquivalent };
+    const decoded =
+        jwt.verify(
+            token,
+            process.env.JWT_SECRET
+        );
+
+    return decoded.id;
 }
 
-function selectValueWithinRange(min, max) {
-    return Math.floor(Math.random() * (max - min + 1)) + min;
-}
 
-function getPortfolioByRisk(riskLevel) {
-    const allocationRanges = portfolioAllocations[riskLevel];
-    if (allocationRanges) {
-        return selectPortfolioAllocation(allocationRanges);
-    } else {
-        throw new Error("Invalid risk level");
-    }
-}
-
-// Controller to handle submitting or updating a portfolio based on questionnaire response
+// Create or update a user's portfolio
 export const submitPortfolio = async (req, res) => {
-    const token = req.headers.authorization?.split(" ")[1];
-    if (!token) {
-        return res.status(401).json({ error: "Authorization token required" });
-    }
-
     try {
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        const userId = decoded.id;
+        const userId =
+            getUserIdFromRequest(req);
+
         const { riskLevel } = req.body;
 
         if (!riskLevel) {
-            return res.status(400).json({ error: "Risk level is required" });
+            return res.status(400).json({
+                error: 'Risk level is required',
+            });
         }
 
-        const allocation = getPortfolioByRisk(riskLevel);
-        const portfolio = await Portfolio.findOne({ where: { userId } });
-        if (portfolio) {
-            await Portfolio.update({
-                Stock: allocation.Stock,
-                Fund: allocation.Fund,
-                ['Cash&Equivalent']: allocation.CashAndEquivalent
-            }, {
-                where: { userId }
-            });
-            res.json({ message: "Portfolio updated", portfolio: {...portfolio.toJSON(), ...allocation} });
-        } else {
-            const newPortfolio = await Portfolio.create({
-                userId,
-                Stock: allocation.Stock,
-                Fund: allocation.Fund,
-                ['Cash&Equivalent']: allocation.CashAndEquivalent,
+        const allocation =
+            getPortfolioAllocation(
                 riskLevel
+            );
+
+        let portfolio =
+            await Portfolio.findOne({
+                where: { userId },
             });
-            res.status(201).json({ message: "Portfolio created", portfolio: newPortfolio });
+
+        if (portfolio) {
+            await portfolio.update({
+                equity:
+                    allocation.equity,
+
+                fixedIncome:
+                    allocation.fixedIncome,
+
+                cashEquivalent:
+                    allocation.cashEquivalent,
+
+                riskLevel:
+                    allocation.riskLevel,
+            });
+
+            return res.json({
+                message:
+                    'Portfolio updated successfully',
+
+                portfolio,
+            });
         }
+
+        portfolio =
+            await Portfolio.create({
+                userId,
+
+                equity:
+                    allocation.equity,
+
+                fixedIncome:
+                    allocation.fixedIncome,
+
+                cashEquivalent:
+                    allocation.cashEquivalent,
+
+                riskLevel:
+                    allocation.riskLevel,
+            });
+
+        return res.status(201).json({
+            message:
+                'Portfolio created successfully',
+
+            portfolio,
+        });
     } catch (error) {
-        if (error.name === 'TokenExpiredError') {
-            return res.status(401).json({ error: 'Token has expired' });
-        } else if (error.name === 'JsonWebTokenError') {
-            return res.status(401).json({ error: 'Invalid token' });
-        } else {
-            return res.status(500).json({ error: 'Failed to process portfolio request.' });
+        if (
+            error.name ===
+            'TokenExpiredError'
+        ) {
+            return res.status(401).json({
+                error:
+                    'Token has expired',
+            });
         }
+
+        if (
+            error.name ===
+            'JsonWebTokenError'
+        ) {
+            return res.status(401).json({
+                error:
+                    'Invalid token',
+            });
+        }
+
+        if (error.statusCode) {
+            return res
+                .status(error.statusCode)
+                .json({
+                    error:
+                        error.message,
+                });
+        }
+
+        if (
+            error.message.startsWith(
+                'Invalid risk level:'
+            )
+        ) {
+            return res.status(400).json({
+                error:
+                    error.message,
+            });
+        }
+
+        console.error(
+            'Portfolio submission error:',
+            error
+        );
+
+        return res.status(500).json({
+            error:
+                'Failed to process portfolio request.',
+        });
     }
 };
 
-// fetch portfolio by userId
-export const getPortfolioByUserId = async (req, res) => {
-    if (!req.headers || !req.headers.authorization) {
-        return res.status(401).json({ error: "Authorization token required" });
-    }
 
-    const token = req.headers.authorization?.split(" ")[1];
-    if (!token) {
-        return res.status(401).json({ error: "Authorization token required" });
-    }
+// Retrieve the current user's portfolio
+export const getPortfolioByUserId =
+    async (req, res) => {
+        try {
+            const userId =
+                getUserIdFromRequest(req);
 
-    try {
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        const userId = decoded.id;
+            const portfolio =
+                await Portfolio.findOne({
+                    where: { userId },
+                });
 
-        const portfolio = await Portfolio.findOne({ where: { userId } });
-        if (!portfolio) {
-            console.log("No portfolio found for user:", userId);
-            return res.status(404).json({ message: "No portfolio found for this user." });
+            if (!portfolio) {
+                return res.status(404).json({
+                    message:
+                        'No portfolio found for this user.',
+                });
+            }
+
+            return res.json({
+                portfolio,
+            });
+        } catch (error) {
+            if (
+                error.name ===
+                'TokenExpiredError'
+            ) {
+                return res.status(401).json({
+                    error:
+                        'Token has expired',
+                });
+            }
+
+            if (
+                error.name ===
+                'JsonWebTokenError'
+            ) {
+                return res.status(401).json({
+                    error:
+                        'Invalid token',
+                });
+            }
+
+            if (error.statusCode) {
+                return res
+                    .status(error.statusCode)
+                    .json({
+                        error:
+                            error.message,
+                    });
+            }
+
+            console.error(
+                'Portfolio retrieval error:',
+                error
+            );
+
+            return res.status(500).json({
+                error:
+                    'Failed to retrieve portfolio.',
+            });
         }
-        return portfolio;
-    } catch (error) {
-        console.error("Error retrieving portfolio for user ID:", userId, error);
-        return res.status(500).json({ error: 'Failed to retrieve portfolio' });
-    }
-};
+    };
