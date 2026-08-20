@@ -9,6 +9,7 @@ import sequelize from './config/db.js';
 import portfolioRouter from "./routes/portfolioRoute.js";
 import financialProductRouter from "./routes/financialProductRoute.js";
 import recommendationRouter from "./routes/recommendationRoute.js";
+import './models/associations.js';
 
 dotenv.config();
 const app = express();
