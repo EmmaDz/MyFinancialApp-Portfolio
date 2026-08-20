@@ -1,14 +1,21 @@
 import express from 'express';
+
 import {
     createFinancialProduct,
-    queryFinancialProductsByType,
-    queryFinancialProductsByTypes
+    queryFinancialProducts,
 } from '../controllers/financialProductController.js';
 
-const financialProductRouter = express.Router();
+const financialProductRouter =
+    express.Router();
 
-financialProductRouter.post("/create", createFinancialProduct);
-financialProductRouter.get("/queryByType", queryFinancialProductsByType);
-financialProductRouter.get("/queryByTypes", queryFinancialProductsByTypes);
+financialProductRouter.get(
+    '/',
+    queryFinancialProducts
+);
+
+financialProductRouter.post(
+    '/',
+    createFinancialProduct
+);
 
 export default financialProductRouter;

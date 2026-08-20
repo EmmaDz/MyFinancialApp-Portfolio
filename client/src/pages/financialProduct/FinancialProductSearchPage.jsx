@@ -1,52 +1,129 @@
 import { useState } from 'react';
 
 const FinancialProductSearchPage = () => {
-    const [searchType, setSearchType] = useState('');
+    const [searchAssetClass, setSearchAssetClass] = useState('');
     const [searchResults, setSearchResults] = useState([]);
 
-    const handleSearch = async () => {
-        try {
-            const response = await fetch(`http://localhost:4000/api/financialProduct/queryByType?type=${searchType}`, {
-                method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json'
-                }
-            });
+    const assetClasses = [
+        'Equity',
+        'Fixed Income',
+        'Cash Equivalent',
+    ];
 
-            if (response.ok) {
-                const data = await response.json();
-                setSearchResults(data.data);
-            } else {
-                throw new Error('Failed to fetch financial products');
+    const handleSearch = async () => {
+        if (!searchAssetClass) {
+            return;
+        }
+
+        try {
+            const assetClass =
+                encodeURIComponent(searchAssetClass);
+
+            const response = await fetch(
+                `http://localhost:4000/api/financialProduct?assetClass=${assetClass}`,
+                {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                }
+            );
+
+            if (!response.ok) {
+                throw new Error(
+                    'Failed to fetch financial products'
+                );
             }
+
+            const data = await response.json();
+
+            setSearchResults(data.data);
         } catch (error) {
-            console.error('Error fetching financial products:', error.message);
+            console.error(
+                'Error fetching financial products:',
+                error.message
+            );
         }
     };
 
     return (
         <div>
-            <h2>Search Financial Products by Type</h2>
+            <h2>
+                Search Financial Products by Asset Class
+            </h2>
+
             <div>
-                <input 
-                    type="text" 
-                    placeholder="Enter product type" 
-                    value={searchType} 
-                    onChange={(e) => setSearchType(e.target.value)} 
-                />
-                <button onClick={handleSearch}>Search</button>
+                <select
+                    value={searchAssetClass}
+                    onChange={(e) =>
+                        setSearchAssetClass(e.target.value)
+                    }
+                >
+                    <option value="">
+                        Select an Asset Class
+                    </option>
+
+                    {assetClasses.map((assetClass) => (
+                        <option
+                            key={assetClass}
+                            value={assetClass}
+                        >
+                            {assetClass}
+                        </option>
+                    ))}
+                </select>
+
+                <button onClick={handleSearch}>
+                    Search
+                </button>
             </div>
 
             <h3>Search Results</h3>
+
             <ul>
                 {searchResults.map((product) => (
-                    <li key={product.id}>
-                        <strong>Name:</strong> {product.name} <br />
-                        <strong>Type:</strong> {product.type} <br />
-                        <strong>Institution:</strong> {product.institution} <br />
-                        <strong>Interest Rate:</strong> {product.interestRate} <br />
-                        <strong>Description:</strong> {product.description} <br />
-                        <strong>Risk Level:</strong> {product.riskLevel}
+                    <li
+                        key={product.id}
+                        style={{
+                            marginBottom: '20px',
+                        }}
+                    >
+                        <strong>Name:</strong>{' '}
+                        {product.name}
+                        <br />
+
+                        <strong>Asset Class:</strong>{' '}
+                        {product.assetClass}
+                        <br />
+
+                        <strong>Product Type:</strong>{' '}
+                        {product.productType}
+                        <br />
+
+                        <strong>Institution:</strong>{' '}
+                        {product.institution}
+                        <br />
+
+                        {product.interestRate != null && (
+                            <>
+                                <strong>
+                                    Interest Rate:
+                                </strong>{' '}
+                                {product.interestRate}%
+                                <br />
+                            </>
+                        )}
+
+                        <strong>Fee:</strong>{' '}
+                        {product.fee}%
+                        <br />
+
+                        <strong>Risk Level:</strong>{' '}
+                        {product.riskLevel}
+                        <br />
+
+                        <strong>Description:</strong>{' '}
+                        {product.description}
                     </li>
                 ))}
             </ul>
@@ -55,5 +132,3 @@ const FinancialProductSearchPage = () => {
 };
 
 export default FinancialProductSearchPage;
-
-

@@ -1,72 +1,118 @@
-import FinancialProduct from '../models/financialProductModel.js';   
+import FinancialProduct from '../models/financialProductModel.js';
+
 
 export const createFinancialProduct = async (req, res) => {
     try {
-        const { name, type, institution, interestRate, description, riskLevel, fee } = req.body;
-
-        const newProduct = await FinancialProduct.create({
+        const {
             name,
-            type,
+            assetClass,
+            productType,
             institution,
             interestRate,
             description,
             riskLevel,
-            fee
-        });
+            fee,
+        } = req.body;
 
-        res.status(201).json({
-            message: 'Financial product created successfully',
-            data: newProduct
+        if (
+            !name ||
+            !assetClass ||
+            !productType ||
+            !institution ||
+            !riskLevel
+        ) {
+            return res.status(400).json({
+                message:
+                    'Name, asset class, product type, institution, and risk level are required.',
+            });
+        }
+
+        const newProduct =
+            await FinancialProduct.create({
+                name,
+                assetClass,
+                productType,
+                institution,
+                interestRate:
+                    interestRate === '' ||
+                    interestRate == null
+                        ? null
+                        : interestRate,
+                description:
+                    description || null,
+                riskLevel,
+                fee:
+                    fee === '' ||
+                    fee == null
+                        ? 0
+                        : fee,
+            });
+
+        return res.status(201).json({
+            message:
+                'Financial product created successfully',
+            data: newProduct,
         });
     } catch (error) {
-        res.status(500).json({
-            message: 'Error creating financial product',
-            error: error.message
+        console.error(
+            'Financial product creation error:',
+            error
+        );
+
+        return res.status(500).json({
+            message:
+                'Error creating financial product',
         });
     }
 };
 
-export const queryFinancialProductsByType = async (req, res) => {
-    try {
-        const { type } = req.query;
 
-        const products = await FinancialProduct.findAll({
-            where: {
-                type: type
+export const queryFinancialProducts =
+    async (req, res) => {
+        try {
+            const {
+                assetClass,
+                productType,
+                riskLevel,
+            } = req.query;
+
+            const where = {};
+
+            if (assetClass) {
+                where.assetClass = assetClass;
             }
-        });
 
-        res.status(200).json({
-            message: `Financial products of type ${type} fetched successfully`,
-            data: products
-        });
-    } catch (error) {
-        res.status(500).json({
-            message: 'Error querying financial products by type',
-            error: error.message
-        });
-    }
-};
-
-export const queryFinancialProductsByTypes = async (req, res) => {
-    try {
-        const { types } = req.query;
-
-        const typesArray = types ? types.split(',') : [];
-
-        const products = await FinancialProduct.findAll({
-            where: {
-                type: typesArray
+            if (productType) {
+                where.productType = productType;
             }
-        });
-        res.status(200).json({
-            message: 'Financial products fetched successfully for specified types',
-            data: products
-        });
-    } catch (error) {
-        res.status(500).json({
-            message: 'Error querying financial products by types',
-            error: error.message
-        });
-    }
-};
+
+            if (riskLevel) {
+                where.riskLevel = riskLevel;
+            }
+
+            const products =
+                await FinancialProduct.findAll({
+                    where,
+                    order: [
+                        ['assetClass', 'ASC'],
+                        ['name', 'ASC'],
+                    ],
+                });
+
+            return res.status(200).json({
+                message:
+                    'Financial products fetched successfully',
+                data: products,
+            });
+        } catch (error) {
+            console.error(
+                'Financial product query error:',
+                error
+            );
+
+            return res.status(500).json({
+                message:
+                    'Error querying financial products',
+            });
+        }
+    };

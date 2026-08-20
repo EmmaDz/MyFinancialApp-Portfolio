@@ -1,0 +1,124 @@
+[
+  {
+    "name": "Maple Canadian Equity ETF",
+    "assetClass": "Equity",
+    "productType": "ETF",
+    "institution": "Maple Demo Investments",
+    "interestRate": null,
+    "description": "Demo ETF providing broad exposure to Canadian equities.",
+    "riskLevel": "Growth",
+    "fee": 0.22
+  },
+  {
+    "name": "Northstar Global Equity Fund",
+    "assetClass": "Equity",
+    "productType": "Mutual Fund",
+    "institution": "Northstar Demo Asset Management",
+    "interestRate": null,
+    "description": "Demo mutual fund providing diversified global equity exposure.",
+    "riskLevel": "Growth",
+    "fee": 0.85
+  },
+  {
+    "name": "Harbour Dividend Equity ETF",
+    "assetClass": "Equity",
+    "productType": "ETF",
+    "institution": "Harbour Demo Financial",
+    "interestRate": null,
+    "description": "Demo ETF focused on dividend-paying equity securities.",
+    "riskLevel": "Balanced",
+    "fee": 0.35
+  },
+  {
+    "name": "Summit Growth Equity Fund",
+    "assetClass": "Equity",
+    "productType": "Mutual Fund",
+    "institution": "Summit Demo Investments",
+    "interestRate": null,
+    "description": "Demo equity fund designed to represent a higher-growth investment strategy.",
+    "riskLevel": "Aggressive Growth",
+    "fee": 1.05
+  },
+
+  {
+    "name": "Maple Canadian Bond ETF",
+    "assetClass": "Fixed Income",
+    "productType": "ETF",
+    "institution": "Maple Demo Investments",
+    "interestRate": null,
+    "description": "Demo ETF providing diversified exposure to Canadian fixed-income securities.",
+    "riskLevel": "Conservative",
+    "fee": 0.18
+  },
+  {
+    "name": "Northstar Government Bond Fund",
+    "assetClass": "Fixed Income",
+    "productType": "Mutual Fund",
+    "institution": "Northstar Demo Asset Management",
+    "interestRate": null,
+    "description": "Demo mutual fund focused primarily on government fixed-income securities.",
+    "riskLevel": "Very Conservative",
+    "fee": 0.55
+  },
+  {
+    "name": "Harbour Corporate Bond ETF",
+    "assetClass": "Fixed Income",
+    "productType": "ETF",
+    "institution": "Harbour Demo Financial",
+    "interestRate": null,
+    "description": "Demo ETF representing diversified investment-grade corporate bonds.",
+    "riskLevel": "Balanced",
+    "fee": 0.28
+  },
+  {
+    "name": "Summit Short-Term Bond Fund",
+    "assetClass": "Fixed Income",
+    "productType": "Mutual Fund",
+    "institution": "Summit Demo Investments",
+    "interestRate": null,
+    "description": "Demo short-term fixed-income fund intended to represent lower duration exposure.",
+    "riskLevel": "Conservative",
+    "fee": 0.48
+  },
+
+  {
+    "name": "Maple 1-Year Demo GIC",
+    "assetClass": "Cash Equivalent",
+    "productType": "GIC",
+    "institution": "Maple Demo Bank",
+    "interestRate": 3.25,
+    "description": "Demo one-year guaranteed investment certificate used for application testing.",
+    "riskLevel": "Very Conservative",
+    "fee": 0
+  },
+  {
+    "name": "Northstar High Interest Savings",
+    "assetClass": "Cash Equivalent",
+    "productType": "Savings",
+    "institution": "Northstar Demo Bank",
+    "interestRate": 2.75,
+    "description": "Demo high-interest savings product used to represent cash-equivalent holdings.",
+    "riskLevel": "Very Conservative",
+    "fee": 0
+  },
+  {
+    "name": "Harbour Money Market Fund",
+    "assetClass": "Cash Equivalent",
+    "productType": "Money Market Fund",
+    "institution": "Harbour Demo Financial",
+    "interestRate": null,
+    "description": "Demo money market fund representing short-term liquid securities.",
+    "riskLevel": "Very Conservative",
+    "fee": 0.15
+  },
+  {
+    "name": "Summit 2-Year Demo GIC",
+    "assetClass": "Cash Equivalent",
+    "productType": "GIC",
+    "institution": "Summit Demo Bank",
+    "interestRate": 3.5,
+    "description": "Demo two-year guaranteed investment certificate used for application testing.",
+    "riskLevel": "Conservative",
+    "fee": 0
+  }
+]
