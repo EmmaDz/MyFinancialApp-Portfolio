@@ -33,6 +33,17 @@ const UserSelection = () => {
             return;
         }
 
+        const token =
+            localStorage.getItem('token');
+
+        if (!token) {
+            console.error(
+                'Authentication token is missing.'
+            );
+
+            return;
+        }
+
         try {
             const assetClass =
                 encodeURIComponent(
@@ -41,12 +52,26 @@ const UserSelection = () => {
 
             const response =
                 await fetch(
-                    `http://localhost:4000/api/financialProduct?assetClass=${assetClass}`
+                    `http://localhost:4000/api/financialProduct/compatible?assetClass=${assetClass}`,
+                    {
+                        method: 'GET',
+                        headers: {
+                            Authorization:
+                                `Bearer ${token}`,
+                            'Content-Type':
+                                'application/json',
+                        },
+                    }
                 );
 
             if (!response.ok) {
+                const errorData =
+                    await response.json();
+
                 throw new Error(
-                    'Failed to fetch financial products'
+                    errorData.error ||
+                    errorData.message ||
+                    'Failed to fetch compatible financial products.'
                 );
             }
 
@@ -54,19 +79,21 @@ const UserSelection = () => {
                 await response.json();
 
             setSearchResults(
-                data.data.map(product => ({
-                    ...product,
-                    isChecked:
-                        selectedProducts.some(
-                            selected =>
-                                selected.id ===
-                                product.id
-                        ),
-                }))
+                data.data.map(
+                    product => ({
+                        ...product,
+                        isChecked:
+                            selectedProducts.some(
+                                selected =>
+                                    selected.id ===
+                                    product.id
+                            ),
+                    })
+                )
             );
         } catch (error) {
             console.error(
-                'Error fetching financial products:',
+                'Error fetching compatible financial products:',
                 error.message
             );
         }
@@ -129,9 +156,14 @@ const UserSelection = () => {
                 }}
             >
                 <h2>
-                    Search Financial Products
-                    by Asset Class
+                    Compatible Financial Products
                 </h2>
+
+                <p>
+                    Products are filtered based on your
+                    latest risk profile and selected
+                    asset class.
+                </p>
 
                 <div
                     style={{

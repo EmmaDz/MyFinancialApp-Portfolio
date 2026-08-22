@@ -5,7 +5,7 @@ import Home from './pages/Home';
 import PortfolioPage from './pages/PortfolioPage';
 import Questionaire from './pages/survey/Questionaire';
 import Result from './pages/survey/Result';
-import FinancialProductForm from './pages/financialProduct/FinancialProductForm';
+
 import FinancialProductSearchPage from './pages/financialProduct/FinancialProductSearchPage';
 import RecommendationPage from './pages/RecommendationPage';
 import UserSelection from './pages/UserSelection';
@@ -24,7 +24,6 @@ const App = () => {
           <Route path='/questionaire' element={<Questionaire />} />
           <Route path='/result' element={<Result />} />
           <Route path="/portfolio" element={<PortfolioPage />} />
-          <Route path="/financialProductForm" element={<FinancialProductForm />} />
           <Route path="/financialProductSearch" element={<FinancialProductSearchPage />} />
           <Route path='/recommendations' element={<RecommendationPage />} />
           <Route path='/userSelection' element={<UserSelection />} />

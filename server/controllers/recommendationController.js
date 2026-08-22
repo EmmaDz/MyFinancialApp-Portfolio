@@ -1,6 +1,6 @@
 import jwt from 'jsonwebtoken';
 import { Op } from 'sequelize';
-
+import sequelize from '../config/db.js';
 import FinancialProduct
     from '../models/financialProductModel.js';
 
@@ -13,6 +13,13 @@ import Recommendation
 import {
     generateProductAllocations,
 } from '../services/recommendationService.js';
+
+import RiskManage
+    from '../models/RiskManageModel.js';
+
+import {
+    isRiskCompatible,
+} from '../services/productMatchingService.js';
 
 
 export const generateAndSaveRecommendation =
@@ -69,7 +76,6 @@ export const generateAndSaveRecommendation =
                     },
                 });
 
-
             if (!portfolio) {
                 return res.status(404).json({
                     message:
@@ -77,6 +83,26 @@ export const generateAndSaveRecommendation =
                 });
             }
 
+            const latestAssessment =
+                await RiskManage.findOne({
+                    where: {
+                        userId,
+                    },
+
+                    order: [
+                        [
+                            'assessmentDate',
+                            'DESC',
+                        ],
+                    ],
+                });
+
+            if (!latestAssessment) {
+                return res.status(404).json({
+                    message:
+                        'No risk assessment found for this user.',
+                });
+            }
 
             const products =
                 await FinancialProduct.findAll({
@@ -87,7 +113,6 @@ export const generateAndSaveRecommendation =
                         },
                     },
                 });
-
 
             if (
                 products.length !==
@@ -100,6 +125,23 @@ export const generateAndSaveRecommendation =
             }
 
 
+            const incompatibleProduct =
+                products.find(
+                    product =>
+                        !isRiskCompatible(
+                            latestAssessment.riskLevel,
+                            product.riskLevel
+                        )
+                );
+
+            if (incompatibleProduct) {
+                return res.status(400).json({
+                    message:
+                        `Selected product "${incompatibleProduct.name}" is not compatible with the current risk profile.`,
+                });
+            }
+
+
             const allocations =
                 generateProductAllocations(
                     portfolio,
@@ -107,34 +149,44 @@ export const generateAndSaveRecommendation =
                 );
 
 
-            await Recommendation.destroy({
-                where: {
-                    userId,
-                },
-            });
+            const transaction =
+                await sequelize.transaction();
 
-
-            const recommendations = [];
-
-
-            for (
-                const allocation of
-                allocations
-            ) {
-                const recommendation =
-                    await Recommendation.create({
+            try {
+                await Recommendation.destroy({
+                    where: {
                         userId,
+                    },
+                    transaction,
+                });
 
-                        productId:
-                            allocation.productId,
 
-                        investmentProportion:
-                            allocation.investmentProportion,
-                    });
+                for (
+                    const allocation of
+                    allocations
+                ) {
+                    await Recommendation.create(
+                        {
+                            userId,
 
-                recommendations.push(
-                    recommendation
-                );
+                            productId:
+                                allocation.productId,
+
+                            investmentProportion:
+                                allocation
+                                    .investmentProportion,
+                        },
+                        {
+                            transaction,
+                        }
+                    );
+                }
+
+                await transaction.commit();
+            } catch (error) {
+                await transaction.rollback();
+
+                throw error;
             }
 
             const savedRecommendations =

@@ -1,5 +1,49 @@
 import FinancialProduct from '../models/financialProductModel.js';
+import jwt from 'jsonwebtoken';
+import RiskManage from '../models/RiskManageModel.js';
+import {
+    filterCompatibleProducts,
+} from '../services/productMatchingService.js';
 
+
+function getUserIdFromRequest(req) {
+    const authHeader =
+        req.headers.authorization;
+
+    if (!authHeader) {
+        const error = new Error(
+            'Authorization token required'
+        );
+
+        error.statusCode = 401;
+
+        throw error;
+    }
+
+    const [scheme, token] =
+        authHeader.split(' ');
+
+    if (
+        scheme !== 'Bearer' ||
+        !token
+    ) {
+        const error = new Error(
+            'Invalid authorization header'
+        );
+
+        error.statusCode = 401;
+
+        throw error;
+    }
+
+    const decoded =
+        jwt.verify(
+            token,
+            process.env.JWT_SECRET
+        );
+
+    return decoded.id;
+}
 
 export const createFinancialProduct = async (req, res) => {
     try {
@@ -113,6 +157,125 @@ export const queryFinancialProducts =
             return res.status(500).json({
                 message:
                     'Error querying financial products',
+            });
+        }
+    };
+
+    export const queryCompatibleFinancialProducts =
+    async (req, res) => {
+        try {
+            const userId =
+                getUserIdFromRequest(req);
+
+            const {
+                assetClass,
+            } = req.query;
+
+
+            if (!assetClass) {
+                return res.status(400).json({
+                    message:
+                        'Asset class is required.',
+                });
+            }
+
+
+            const latestAssessment =
+                await RiskManage.findOne({
+                    where: {
+                        userId,
+                    },
+
+                    order: [
+                        [
+                            'assessmentDate',
+                            'DESC',
+                        ],
+                    ],
+                });
+
+
+            if (!latestAssessment) {
+                return res.status(404).json({
+                    message:
+                        'No risk assessment found for this user.',
+                });
+            }
+
+
+            const products =
+                await FinancialProduct.findAll({
+                    where: {
+                        assetClass,
+                    },
+
+                    order: [
+                        ['name', 'ASC'],
+                    ],
+                });
+
+
+            const compatibleProducts =
+                filterCompatibleProducts(
+                    latestAssessment.riskLevel,
+                    products
+                );
+
+
+            return res.status(200).json({
+                message:
+                    'Compatible financial products fetched successfully',
+
+                riskLevel:
+                    latestAssessment.riskLevel,
+
+                data:
+                    compatibleProducts,
+            });
+        } catch (error) {
+            console.error(
+                'Compatible financial product query error:',
+                error
+            );
+
+
+            if (
+                error.name ===
+                'TokenExpiredError'
+            ) {
+                return res.status(401).json({
+                    error:
+                        'Token has expired',
+                });
+            }
+
+
+            if (
+                error.name ===
+                'JsonWebTokenError'
+            ) {
+                return res.status(401).json({
+                    error:
+                        'Invalid token',
+                });
+            }
+
+
+            if (error.statusCode) {
+                return res
+                    .status(
+                        error.statusCode
+                    )
+                    .json({
+                        error:
+                            error.message,
+                    });
+            }
+
+
+            return res.status(500).json({
+                message:
+                    'Error querying compatible financial products',
             });
         }
     };

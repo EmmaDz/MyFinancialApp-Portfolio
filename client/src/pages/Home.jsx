@@ -119,9 +119,6 @@ const Home = () => {
             <div style={styles.adminButtonContainer}>
                 <h1>Welcome, Admin!</h1>
                 <p>You are logged in as an admin.</p>
-                <button onClick={() => navigate("/financialProductForm")} style={buttonStyle}>Manage Financial
-                    Products
-                </button>
                 <button onClick={() => navigate("/financialProductSearch")} style={buttonStyle}>Search Financial
                     Products
                 </button>
