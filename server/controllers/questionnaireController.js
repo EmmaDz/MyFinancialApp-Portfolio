@@ -1,29 +1,12 @@
-import jwt from 'jsonwebtoken';
-
 import RiskManage from '../models/RiskManageModel.js';
 import { calculateRiskProfile } from '../services/riskProfileService.js';
 
-
 const submitQuiz = async (req, res) => {
-    const token = req.headers.authorization?.split(' ')[1];
-
-    if (!token) {
-        return res.status(401).json({
-            error: 'Authorization token required',
-        });
-    }
-
     try {
         // -----------------------------------------
-        // 1. Authenticate the current user
+        // 1. Get current user's user id
         // -----------------------------------------
-
-        const decoded = jwt.verify(
-            token,
-            process.env.JWT_SECRET
-        );
-
-        const userId = decoded.id;
+        const userId = req.userId;
 
 
         // -----------------------------------------
@@ -110,22 +93,6 @@ const submitQuiz = async (req, res) => {
             },
         });
     } catch (error) {
-        if (
-            error.name === 'TokenExpiredError'
-        ) {
-            return res.status(401).json({
-                error: 'Token has expired',
-            });
-        }
-
-        if (
-            error.name === 'JsonWebTokenError'
-        ) {
-            return res.status(401).json({
-                error: 'Invalid token',
-            });
-        }
-
         // Validation errors thrown by
         // calculateRiskProfile()
         if (
@@ -156,22 +123,8 @@ const submitQuiz = async (req, res) => {
 
 
 const getRiskLevel = async (req, res) => {
-    const token =
-        req.headers.authorization?.split(' ')[1];
-
-    if (!token) {
-        return res.status(401).json({
-            error: 'Authorization token required',
-        });
-    }
-
     try {
-        const decoded = jwt.verify(
-            token,
-            process.env.JWT_SECRET
-        );
-
-        const userId = decoded.id;
+        const userId = req.userId;
 
         const riskInfo =
             await RiskManage.findOne({
@@ -210,22 +163,6 @@ const getRiskLevel = async (req, res) => {
 
         return res.json(riskInfo);
     } catch (error) {
-        if (
-            error.name === 'TokenExpiredError'
-        ) {
-            return res.status(401).json({
-                error: 'Token has expired',
-            });
-        }
-
-        if (
-            error.name === 'JsonWebTokenError'
-        ) {
-            return res.status(401).json({
-                error: 'Invalid token',
-            });
-        }
-
         console.error(
             'Error fetching risk information:',
             error

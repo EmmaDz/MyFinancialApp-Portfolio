@@ -1,49 +1,8 @@
 import FinancialProduct from '../models/financialProductModel.js';
-import jwt from 'jsonwebtoken';
 import RiskManage from '../models/RiskManageModel.js';
 import {
     filterCompatibleProducts,
 } from '../services/productMatchingService.js';
-
-
-function getUserIdFromRequest(req) {
-    const authHeader =
-        req.headers.authorization;
-
-    if (!authHeader) {
-        const error = new Error(
-            'Authorization token required'
-        );
-
-        error.statusCode = 401;
-
-        throw error;
-    }
-
-    const [scheme, token] =
-        authHeader.split(' ');
-
-    if (
-        scheme !== 'Bearer' ||
-        !token
-    ) {
-        const error = new Error(
-            'Invalid authorization header'
-        );
-
-        error.statusCode = 401;
-
-        throw error;
-    }
-
-    const decoded =
-        jwt.verify(
-            token,
-            process.env.JWT_SECRET
-        );
-
-    return decoded.id;
-}
 
 export const createFinancialProduct = async (req, res) => {
     try {
@@ -165,7 +124,7 @@ export const queryFinancialProducts =
     async (req, res) => {
         try {
             const userId =
-                getUserIdFromRequest(req);
+                req.userId;
 
             const {
                 assetClass,
@@ -237,28 +196,6 @@ export const queryFinancialProducts =
                 'Compatible financial product query error:',
                 error
             );
-
-
-            if (
-                error.name ===
-                'TokenExpiredError'
-            ) {
-                return res.status(401).json({
-                    error:
-                        'Token has expired',
-                });
-            }
-
-
-            if (
-                error.name ===
-                'JsonWebTokenError'
-            ) {
-                return res.status(401).json({
-                    error:
-                        'Invalid token',
-                });
-            }
 
 
             if (error.statusCode) {

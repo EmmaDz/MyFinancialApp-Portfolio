@@ -1,47 +1,14 @@
-import jwt from 'jsonwebtoken';
 import Portfolio from '../models/portfolioModel.js';
 import {
     getPortfolioAllocation,
 } from '../services/portfolioAllocationService.js';
 
 
-function getUserIdFromRequest(req) {
-    const authHeader = req.headers.authorization;
-
-    if (!authHeader) {
-        const error = new Error(
-            'Authorization token required'
-        );
-        error.statusCode = 401;
-        throw error;
-    }
-
-    const [scheme, token] =
-        authHeader.split(' ');
-
-    if (scheme !== 'Bearer' || !token) {
-        const error = new Error(
-            'Invalid authorization header'
-        );
-        error.statusCode = 401;
-        throw error;
-    }
-
-    const decoded =
-        jwt.verify(
-            token,
-            process.env.JWT_SECRET
-        );
-
-    return decoded.id;
-}
-
-
 // Create or update a user's portfolio
 export const submitPortfolio = async (req, res) => {
     try {
         const userId =
-            getUserIdFromRequest(req);
+            req.userId;
 
         const { riskLevel } = req.body;
 
@@ -108,26 +75,6 @@ export const submitPortfolio = async (req, res) => {
             portfolio,
         });
     } catch (error) {
-        if (
-            error.name ===
-            'TokenExpiredError'
-        ) {
-            return res.status(401).json({
-                error:
-                    'Token has expired',
-            });
-        }
-
-        if (
-            error.name ===
-            'JsonWebTokenError'
-        ) {
-            return res.status(401).json({
-                error:
-                    'Invalid token',
-            });
-        }
-
         if (error.statusCode) {
             return res
                 .status(error.statusCode)
@@ -166,7 +113,7 @@ export const getPortfolioByUserId =
     async (req, res) => {
         try {
             const userId =
-                getUserIdFromRequest(req);
+                req.userId;
 
             const portfolio =
                 await Portfolio.findOne({
@@ -184,26 +131,6 @@ export const getPortfolioByUserId =
                 portfolio,
             });
         } catch (error) {
-            if (
-                error.name ===
-                'TokenExpiredError'
-            ) {
-                return res.status(401).json({
-                    error:
-                        'Token has expired',
-                });
-            }
-
-            if (
-                error.name ===
-                'JsonWebTokenError'
-            ) {
-                return res.status(401).json({
-                    error:
-                        'Invalid token',
-                });
-            }
-
             if (error.statusCode) {
                 return res
                     .status(error.statusCode)

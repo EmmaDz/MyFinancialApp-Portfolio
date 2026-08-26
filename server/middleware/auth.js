@@ -1,17 +1,80 @@
 import jwt from 'jsonwebtoken';
 
-const authMiddleware = async (req, res, next) => {
-    const { token } = req.headers;
-    if (!token) {
-        return res.json({success:false,message:'Not Authorized Login Again'});
+
+const authMiddleware = (
+    req,
+    res,
+    next
+) => {
+    const authHeader =
+        req.headers.authorization;
+
+
+    if (!authHeader) {
+        return res.status(401).json({
+            error:
+                'Authorization token required',
+        });
     }
+
+
+    const [scheme, token] =
+        authHeader.split(' ');
+
+
+    if (
+        scheme !== 'Bearer' ||
+        !token
+    ) {
+        return res.status(401).json({
+            error:
+                'Invalid authorization header',
+        });
+    }
+
+
     try {
-        const token_decode =  jwt.verify(token, process.env.JWT_SECRET);
-        req.body.userId = token_decode.id;
+        const decoded =
+            jwt.verify(
+                token,
+                process.env.JWT_SECRET
+            );
+
+
+        req.userId =
+            decoded.id;
+
+
         next();
     } catch (error) {
-        return res.json({success:false,message:error.message});
+        if (
+            error.name ===
+            'TokenExpiredError'
+        ) {
+            return res.status(401).json({
+                error:
+                    'Token has expired',
+            });
+        }
+
+
+        if (
+            error.name ===
+            'JsonWebTokenError'
+        ) {
+            return res.status(401).json({
+                error:
+                    'Invalid token',
+            });
+        }
+
+
+        return res.status(401).json({
+            error:
+                'Authentication failed',
+        });
     }
-}
+};
+
 
 export default authMiddleware;

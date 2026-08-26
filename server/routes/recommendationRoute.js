@@ -1,12 +1,30 @@
 import express from 'express';
-import { generateAndSaveRecommendation, getAllRecommendations } from '../controllers/recommendationController.js';
 
-const recommendationRouter = express.Router();
+import authMiddleware
+    from '../middleware/auth.js';
 
-// Endpoint to generate and save a new recommendation
-recommendationRouter.post("/generate", generateAndSaveRecommendation);
+import {
+    generateAndSaveRecommendation,
+    getAllRecommendations,
+} from '../controllers/recommendationController.js';
 
-// Endpoint to fetch all recommendations for the current user
-recommendationRouter.get("/list", getAllRecommendations);
+
+const recommendationRouter =
+    express.Router();
+
+
+recommendationRouter.post(
+    '/generate',
+    authMiddleware,
+    generateAndSaveRecommendation
+);
+
+
+recommendationRouter.get(
+    '/list',
+    authMiddleware,
+    getAllRecommendations
+);
+
 
 export default recommendationRouter;

@@ -1,5 +1,6 @@
 import express from 'express';
-
+import authMiddleware
+    from '../middleware/auth.js';
 import {
     createFinancialProduct,
     queryFinancialProducts,
@@ -11,6 +12,7 @@ const financialProductRouter =
 
 financialProductRouter.get(
     '/compatible',
+    authMiddleware,
     queryCompatibleFinancialProducts
 );
 
