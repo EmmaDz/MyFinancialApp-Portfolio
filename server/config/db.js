@@ -1,26 +1,57 @@
 import Sequelize from 'sequelize';
 import 'dotenv/config';
 
-const databaseUrl = process.env.DATABASE_URL;
+
+const isTestEnvironment =
+    process.env.NODE_ENV === 'test';
+
+
+const databaseUrl =
+    isTestEnvironment
+        ? process.env.TEST_DATABASE_URL
+        : process.env.DATABASE_URL;
+
 
 if (!databaseUrl) {
-  throw new Error(
-    'DATABASE_URL is not configured. Copy .env.example to .env and provide a valid MySQL connection string.'
-  );
+    const variableName =
+        isTestEnvironment
+            ? 'TEST_DATABASE_URL'
+            : 'DATABASE_URL';
+
+    throw new Error(
+        `${variableName} is not configured.`
+    );
 }
 
-const sequelize = new Sequelize(databaseUrl, {
-  logging: false,
-});
 
-export const connectDB = async () => {
-  try {
-    await sequelize.authenticate();
-    console.log('Database connection established successfully.');
-  } catch (error) {
-    console.error('Unable to connect to the database:', error.message);
-    throw error;
-  }
-};
+const sequelize =
+    new Sequelize(
+        databaseUrl,
+        {
+            logging: false,
+        }
+    );
+
+
+export const connectDB =
+    async () => {
+        try {
+            await sequelize.authenticate();
+
+            console.log(
+                isTestEnvironment
+                    ? 'Test database connection established successfully.'
+                    : 'Database connection established successfully.'
+            );
+        } catch (error) {
+            console.error(
+                'Unable to connect to the database:',
+                error.message
+            );
+
+            throw error;
+        }
+    };
+
 
 export default sequelize;
