@@ -1,0 +1,78 @@
+name: Backend Tests
+
+on:
+  push:
+    branches:
+      - main
+      - portfolio-cleanup
+
+  pull_request:
+    branches:
+      - main
+
+
+jobs:
+  backend-tests:
+    runs-on: ubuntu-latest
+
+
+    services:
+      mysql:
+        image: mysql:8.4
+
+        env:
+          MYSQL_ROOT_PASSWORD: root_password
+          MYSQL_DATABASE: myfinancialapp_test
+          MYSQL_USER: myfinancialapp_user
+          MYSQL_PASSWORD: test_password
+
+        ports:
+          - 3306:3306
+
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -proot_password"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+
+
+    env:
+      NODE_ENV: test
+
+      TEST_DATABASE_URL: mysql://myfinancialapp_user:test_password@127.0.0.1:3306/myfinancialapp_test
+
+      JWT_SECRET: ci_test_jwt_secret
+
+
+    defaults:
+      run:
+        working-directory: server
+
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+
+        with:
+          node-version: '24'
+
+          cache: npm
+
+          cache-dependency-path:
+            server/package-lock.json
+
+
+      - name: Install dependencies
+        run: npm ci
+
+
+      - name: Run unit tests
+        run: npm test
+
+
+      - name: Run integration tests
+        run: npm run test:integration
